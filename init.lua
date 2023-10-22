@@ -151,13 +151,23 @@ require('lazy').setup({
   },
 
   {
-    -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
-    priority = 1000,
+    'rose-pine/neovim',
+    as = 'rose-pine',
     config = function()
-      vim.cmd.colorscheme 'onedark'
+      vim.cmd.colorscheme('rose-pine')
+      vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
+      vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
     end,
   },
+
+  -- {
+  --   -- Theme inspired by Atom
+  --   'navarasu/onedark.nvim',
+  --   priority = 1000,
+  --   config = function()
+  --     vim.cmd.colorscheme 'onedark'
+  --   end,
+  -- },
 
   {
     -- Set lualine as statusline
@@ -166,9 +176,12 @@ require('lazy').setup({
     opts = {
       options = {
         icons_enabled = false,
-        theme = 'onedark',
+        theme = 'rose-pine',
         component_separators = '|',
         section_separators = '',
+      },
+      sections = {
+        lualine_c = {'buffers'},
       },
     },
   },
@@ -227,7 +240,7 @@ require('lazy').setup({
   --    Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --
   --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
-  -- { import = 'custom.plugins' },
+   { import = 'custom.plugins' },
 }, {})
 
 -- [[ Setting options ]]
@@ -271,7 +284,38 @@ vim.o.completeopt = 'menuone,noselect'
 -- NOTE: You should make sure your terminal supports this
 vim.o.termguicolors = true
 
+vim.g.copilot_assume_mapped = true
+
 -- [[ Basic Keymaps ]]
+vim.keymap.set('n', '<C-n>', ':NvimTreeToggle<CR>', { desc = 'Toggle [N]vimTree' })
+
+vim.keymap.set('n', '<C-h>', '<Left>', { desc = 'Move left' })
+vim.keymap.set('n', '<C-l>', '<Right>', { desc = 'Move right' })
+vim.keymap.set('n', '<C-k>', '<Up>', { desc = 'Move up' })
+vim.keymap.set('n', '<C-j>', '<Down>', { desc = 'Move down' })
+
+vim.keymap.set('n', '<C-h>', '<C-w>h', { desc = 'Window left' })
+vim.keymap.set('n', '<C-l>', '<C-w>l', { desc = 'Window right' })
+vim.keymap.set('n', '<C-k>', '<C-w>k', { desc = 'Window up' })
+vim.keymap.set('n', '<C-j>', '<C-w>j', { desc = 'Window down' })
+
+vim.keymap.set('n', '<M-]>', ':bnext<CR>', { desc = 'Next buffer' })
+vim.keymap.set('n', '<M-[>', ':bprev<CR>', { desc = 'Previous buffer' })
+vim.keymap.set('n', '<M-/>', ':bdelete<CR>', { desc = 'Delete buffer' })
+
+vim.keymap.set('i', '<M-d>', '<Plug>(copilot-dismiss)', { desc = '[D]ismiss current suggestion '})
+
+-- Move selected line / block of text in visual mode
+vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = 'Move line down' })
+vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = 'Move line up '})
+
+-- Keep cursor in middle when half page jumping
+vim.keymap.set("n", "<C-d>", "<C-d>zz", { desc = 'Move half page down' })
+vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = 'Move half page up' })
+
+-- Keep search terms in middle when jumping
+vim.keymap.set("n", "n", "nzzzv", { desc = 'Move to next search term' })
+vim.keymap.set("n", "N", "Nzzzv", { desc = 'Move to previous search term' })
 
 -- Keymaps for better default experience
 -- See `:help vim.keymap.set()`
@@ -431,7 +475,7 @@ local on_attach = function(_, bufnr)
 
   -- See `:help K` for why this keymap
   nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
-  nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
+  -- nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
 
   -- Lesser used LSP functionality
   nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
@@ -524,6 +568,9 @@ cmp.setup {
     expand = function(args)
       luasnip.lsp_expand(args.body)
     end,
+  },
+  completion = {
+    autocomplete = false,
   },
   mapping = cmp.mapping.preset.insert {
     ['<C-n>'] = cmp.mapping.select_next_item(),
