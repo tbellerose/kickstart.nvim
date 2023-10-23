@@ -252,6 +252,21 @@ vim.o.hlsearch = false
 
 -- Make line numbers default
 vim.wo.number = true
+vim.wo.relativenumber = true
+
+vim.opt.tabstop = 4
+vim.opt.softtabstop = 4
+vim.opt.shiftwidth = 4
+vim.opt.expandtab = true
+vim.opt.smartindent = true
+vim.opt.wrap = false
+
+vim.opt.swapfile = false
+vim.opt.backup = false
+vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
+vim.opt.undofile = true
+
+vim.opt.incsearch = true
 
 -- Enable mouse mode
 vim.o.mouse = 'a'
@@ -285,23 +300,23 @@ vim.o.completeopt = 'menuone,noselect'
 vim.o.termguicolors = true
 
 vim.g.copilot_assume_mapped = true
+vim.g.copilot_no_tab_map = true
+vim.keymap.set(
+    "i",
+    "<Plug>(vimrc:copilot-dummy-map)",
+    'copilot#Accept("")',
+    { silent = true, expr = true, desc = "Copilot dummy accept" }
+)
+
+-- vim.g.copilot_no_tab_map = true
+-- vim.keymap.set('i', '<C-p>', 'copilot#Accept("<CR>")', { silent = true, expr = true })
 
 -- [[ Basic Keymaps ]]
 vim.keymap.set('n', '<C-n>', ':NvimTreeToggle<CR>', { desc = 'Toggle [N]vimTree' })
 
-vim.keymap.set('n', '<C-h>', '<Left>', { desc = 'Move left' })
-vim.keymap.set('n', '<C-l>', '<Right>', { desc = 'Move right' })
-vim.keymap.set('n', '<C-k>', '<Up>', { desc = 'Move up' })
-vim.keymap.set('n', '<C-j>', '<Down>', { desc = 'Move down' })
-
-vim.keymap.set('n', '<C-h>', '<C-w>h', { desc = 'Window left' })
-vim.keymap.set('n', '<C-l>', '<C-w>l', { desc = 'Window right' })
-vim.keymap.set('n', '<C-k>', '<C-w>k', { desc = 'Window up' })
-vim.keymap.set('n', '<C-j>', '<C-w>j', { desc = 'Window down' })
-
-vim.keymap.set('n', '<M-]>', ':bnext<CR>', { desc = 'Next buffer' })
-vim.keymap.set('n', '<M-[>', ':bprev<CR>', { desc = 'Previous buffer' })
-vim.keymap.set('n', '<M-/>', ':bdelete<CR>', { desc = 'Delete buffer' })
+vim.keymap.set('n', '<M-]>', ':bnext<CR>', { desc = 'Next buffer', silent = true })
+vim.keymap.set('n', '<M-[>', ':bprev<CR>', { desc = 'Previous buffer', silent = true })
+vim.keymap.set('n', '<M-/>', ':bdelete<CR>', { desc = 'Delete buffer', silent = true })
 
 vim.keymap.set('i', '<M-d>', '<Plug>(copilot-dismiss)', { desc = '[D]ismiss current suggestion '})
 
@@ -316,6 +331,17 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = 'Move half page up' })
 -- Keep search terms in middle when jumping
 vim.keymap.set("n", "n", "nzzzv", { desc = 'Move to next search term' })
 vim.keymap.set("n", "N", "Nzzzv", { desc = 'Move to previous search term' })
+
+vim.keymap.set("x", "<leader>p", "\"_dP", { desc = 'Paste without yanking' })
+
+vim.keymap.set("n", "<leader>y", "\"+y", { desc = 'Yank to clipboard' })
+vim.keymap.set("v", "<leader>y", "\"+y", { desc = 'Yank to clipboard' })
+vim.keymap.set("n", "<leader>Y", "\"+Y", { desc = 'Yank to clipboard' })
+
+vim.keymap.set("n", "<leader>d", "\"_d", { desc = 'Delete without yanking' })
+vim.keymap.set("v", "<leader>d", "\"_d", { desc = 'Delete without yanking' })
+
+vim.keymap.set("i", "<C-c>", "<Esc>", { desc = 'Exit insert mode' })
 
 -- Keymaps for better default experience
 -- See `:help vim.keymap.set()`
@@ -517,7 +543,12 @@ require('mason-lspconfig').setup()
 --  define the property 'filetypes' to the map in question.
 local servers = {
   -- clangd = {},
-  -- gopls = {},
+  gopls = {
+    analyses = {
+      unusedparams = true,
+    },
+    staticcheck = true,
+  },
   -- pyright = {},
   -- rust_analyzer = {},
   -- tsserver = {},
@@ -530,6 +561,13 @@ local servers = {
     },
   },
 }
+
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = '*.go',
+  callback = function()
+    vim.lsp.buf.code_action({ context = { only = { 'source.organizeImports' } }, apply = true })
+  end,
+})
 
 -- Setup neovim lua configuration
 require('neodev').setup()
@@ -569,9 +607,6 @@ cmp.setup {
       luasnip.lsp_expand(args.body)
     end,
   },
-  completion = {
-    autocomplete = false,
-  },
   mapping = cmp.mapping.preset.insert {
     ['<C-n>'] = cmp.mapping.select_next_item(),
     ['<C-p>'] = cmp.mapping.select_prev_item(),
@@ -582,11 +617,17 @@ cmp.setup {
       behavior = cmp.ConfirmBehavior.Replace,
       select = true,
     },
+    ['<C-_>'] = cmp.mapping(function(fallback)
+      vim.api.nvim_feedkeys(vim.fn['copilot#Accept'](vim.api.nvim_replace_termcodes('<Tab>', true, true, true)), 'n', true)
+    end),
     ['<Tab>'] = cmp.mapping(function(fallback)
+      -- local copilot_keys = vim.fn['copilot#Accept']()
       if cmp.visible() then
         cmp.select_next_item()
       elseif luasnip.expand_or_locally_jumpable() then
         luasnip.expand_or_jump()
+      -- elseif copilot_keys ~= '' and type(copilot_keys) == 'string' then
+      --   vim.api.nvim_feedkeys(copilot_keys, 'i', true)
       else
         fallback()
       end
