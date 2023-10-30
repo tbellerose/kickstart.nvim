@@ -372,6 +372,12 @@ require('telescope').setup {
         ['<C-d>'] = false,
       },
     },
+    file_ignore_patterns = { 'node_modules', 'vendor' },
+  },
+  pickers = {
+    find_files = {
+      find_command = { 'rg', '--files', '--hidden', '-g', '!.git', '-u' },
+    },
   },
 }
 
